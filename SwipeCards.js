@@ -126,7 +126,9 @@ export default class SwipeCards extends Component {
     nopeText: "Nope!",
     maybeText: "Maybe!",
     yupText: "Yup!",
-    onClickHandler: () => { },
+    onClickHandler: () => { 
+
+    },
     onDragStart: () => { },
     onDragRelease: () => { },
     cardRemoved: (ix) => null,
@@ -161,7 +163,8 @@ export default class SwipeCards extends Component {
           this.props.onDragStart();
           return true;
         }
-        return false;
+        // return false;
+        return true;
       },
 
       onPanResponderGrant: (e, gestureState) => {
@@ -428,12 +431,12 @@ export default class SwipeCards extends Component {
           ]
         };
 
-        return <Animated.View key={card[this.props.cardKey]} style={[styles.card, animatedCardStyles]} {... this._panResponder.panHandlers}>
+        return <Animated.View key={i} style={[styles.card, animatedCardStyles]} {... this._panResponder.panHandlers}>
           {this.props.renderCard(this.state.card)}
         </Animated.View>;
       }
 
-      return <Animated.View key={card[this.props.cardKey]} style={style}>{this.props.renderCard(card)}</Animated.View>;
+      return <Animated.View key={i} style={style}>{this.props.renderCard(card)}</Animated.View>;
     });
   }
 
