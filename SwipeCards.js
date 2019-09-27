@@ -126,7 +126,7 @@ export default class SwipeCards extends Component {
     nopeText: "Nope!",
     maybeText: "Maybe!",
     yupText: "Yup!",
-    onClickHandler: () => { 
+    onClickHandler: () => {
 
     },
     onDragStart: () => { },
@@ -392,10 +392,15 @@ export default class SwipeCards extends Component {
 
       let offsetX = 20;
       let lastOffsetX = offsetX + this.props.stackOffsetX;
-
-      let offsetY = this.props.stackOffsetY * cards.length - i * this.props.stackOffsetY;
+      let offsetY = 0;
+      offsetY = this.props.stackOffsetY * cards.length - i * this.props.stackOffsetY;
       let lastOffsetY = offsetY + this.props.stackOffsetY;
-
+      if (this.state.cards.length - 1 - currentIndex[this.guid] <= 1) {
+        // scale = 0.85 + (0.15 / cards.length) * (i + 2);
+        offsetY = 30 * cards.length - i * 30;
+      } else {
+        offsetY = this.props.stackOffsetY * cards.length - i * this.props.stackOffsetY;
+      }
       // let opacity = 0.25 + (0.75 / cards.length) * (i + 1);
       let opacity = 1;
       let lastOpacity = 0.25 + (0.75 / cards.length) * i;
