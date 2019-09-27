@@ -129,10 +129,13 @@ export default class SwipeCards extends Component {
     onClickHandler: () => {
 
     },
-    onDragStart: () => { },
+    onDragStart: () => {
+    },
     onDragRelease: () => { },
     cardRemoved: (ix) => null,
     renderCard: (card) => null,
+    lodingHide: () => {
+    },
     style: styles.container,
     dragY: true,
     smoothTransition: false
@@ -168,6 +171,7 @@ export default class SwipeCards extends Component {
       },
 
       onPanResponderGrant: (e, gestureState) => {
+        this.props.lodingHide();
         this.state.pan.setOffset({ x: this.state.pan.x._value, y: this.state.pan.y._value });
         this.state.pan.setValue({ x: 0, y: 0 });
       },
