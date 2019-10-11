@@ -150,7 +150,7 @@ export default class SwipeCards extends Component {
 
     this.state = {
       pan: new Animated.ValueXY(0),
-      enter: new Animated.Value(0.5),
+      enter: new Animated.Value(1),
       cards: [].concat(this.props.cards),
       card: this.props.cards[currentIndex[this.guid]],
     };
@@ -318,7 +318,7 @@ export default class SwipeCards extends Component {
   }
 
   componentDidMount() {
-    this._animateEntrance();
+    // this._animateEntrance();
   }
 
   _animateEntrance() {
