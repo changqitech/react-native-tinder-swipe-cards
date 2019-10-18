@@ -1,7 +1,7 @@
 /* Gratefully copied from https://github.com/brentvatne/react-native-animated-demo-tinder */
 'use strict';
 
-import React, { Component } from 'react';
+import React, { Component, } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -11,7 +11,8 @@ import {
   Animated,
   PanResponder,
   Dimensions,
-  Image
+  Image,
+  Easing
 } from 'react-native';
 
 import clamp from 'clamp';
@@ -20,6 +21,8 @@ import Defaults from './Defaults.js';
 
 const viewport = Dimensions.get('window')
 const SWIPE_THRESHOLD = 120;
+let widthscreen = Dimensions.get('window').width;
+let heightscreen = Dimensions.get('screen').height;
 
 const styles = StyleSheet.create({
   container: {
@@ -153,10 +156,14 @@ export default class SwipeCards extends Component {
       enter: new Animated.Value(1),
       cards: [].concat(this.props.cards),
       card: this.props.cards[currentIndex[this.guid]],
+      moveX: 0,
+      moveY: 0,
     };
 
     this.lastX = 0;
     this.lastY = 0;
+    this.moveX = 0;
+    this.moveY = 0;
 
     this.cardAnimation = null;
 
@@ -171,6 +178,7 @@ export default class SwipeCards extends Component {
       },
 
       onPanResponderGrant: (e, gestureState) => {
+
         this.props.lodingHide();
         this.state.pan.setOffset({ x: this.state.pan.x._value, y: this.state.pan.y._value });
         this.state.pan.setValue({ x: 0, y: 0 });
@@ -178,73 +186,63 @@ export default class SwipeCards extends Component {
 
       onPanResponderTerminationRequest: (evt, gestureState) => this.props.allowGestureTermination,
 
-      onPanResponderMove: Animated.event([
-        null, { dx: this.state.pan.x, dy: this.props.dragY ? this.state.pan.y : 0 },
-      ]),
+      // onPanResponderMove: Animated.event([
+      //   null, { dx: this.state.pan.x, dy: this.props.dragY ? this.state.pan.y : 0 },
+      // ]),
+      onPanResponderMove: (e, gestureState) => {
+        // cards
 
+        const { dx, dy } = gestureState;
+        // if (dy > 20) {
+        //   return
+        // }
+        this.moveX = dx;
+        this.moveY = dy;
+        this.state.pan.setValue({ x: dx, y: dy });
+        // this.setState({
+        //   moveX: dx,
+        //   moveY: dy
+        // })
+      },
       onPanResponderRelease: (e, { vx, vy, dx, dy }) => {
         this.props.onDragRelease()
         this.state.pan.flattenOffset();
-        let velocity;
+        let velocity = 1;
         if (Math.abs(dx) <= 5 && Math.abs(dy) <= 5)   //meaning the gesture did not cover any distance
         {
           this.props.onClickHandler(this.state.card)
         }
 
-        if (vx > 0) {
-          velocity = clamp(vx, 3, 5);
-        } else if (vx < 0) {
-          velocity = clamp(vx * -1, 3, 5) * -1;
-        } else {
-          velocity = dx < 0 ? -3 : 3;
-        }
-
-        const hasSwipedHorizontally = Math.abs(this.state.pan.x._value) > SWIPE_THRESHOLD
-        const hasSwipedVertically = Math.abs(this.state.pan.y._value) > SWIPE_THRESHOLD
-        if (hasSwipedHorizontally || (hasSwipedVertically && this.props.hasMaybeAction)) {
-
-          let cancelled = false;
-
-          const hasMovedRight = hasSwipedHorizontally && this.state.pan.x._value > 0
-          const hasMovedLeft = hasSwipedHorizontally && this.state.pan.x._value < 0
-          const hasMovedUp = hasSwipedVertically && this.state.pan.y._value < 0
-
-          if (hasMovedRight) {
-            cancelled = this.props.handleYup(this.state.card);
-          } else if (hasMovedLeft) {
-            cancelled = this.props.handleNope(this.state.card);
-          } else if (hasMovedUp && this.props.hasMaybeAction) {
-            cancelled = this.props.handleMaybe(this.state.card);
-          } else {
-            cancelled = true
-          }
-
-          //Yup or nope was cancelled, return the card to normal.
-          if (cancelled) {
-            this._resetPan();
-            return;
-          };
-
-          this.props.cardRemoved(currentIndex[this.guid]);
-
-          if (this.props.smoothTransition) {
-            this._advanceState(hasMovedRight);
-          } else {
-            this.cardAnimation = Animated.decay(this.state.pan, {
-              velocity: { x: velocity, y: vy },
-              deceleration: 0.95
-            });
-            this.cardAnimation.start(status => {
-              if (status.finished) this._advanceState(hasMovedRight);
-              else this._resetState();
-
-              this.cardAnimation = null;
-            });
-          }
-
+        // if (vx > 0) {
+        //   velocity = clamp(vx, 3, 9);
+        // } else if (vx < 0) {
+        //   velocity = clamp(vx * -1, 3, 5) * -1;
+        // } else {
+        //   velocity = dx < 0 ? -3 : 3;
+        // } 
+        // console.log(11111, this.state.card)
+        // console.log(2222, this.state.cards)
+        this.moveY = dy;
+        if (dx < -180 || (vx < -0.5 && dx < 0)) {
+          this.myStart(true);
+          setTimeout(() => {
+            this.props.handleNope(this.state.card)
+            this.state.pan.setValue({ x: 0, y: 0 });
+            this.props.cardRemoved(currentIndex[this.guid]);
+            this._advanceState();
+          }, 300);
+        } else if (dx > 180 || (vx > 0.3 && dx > 0)) {
+          this.myStart();
+          setTimeout(() => {
+            this.props.handleYup(this.state.card)
+            this.state.pan.setValue({ x: 0, y: 0 });
+            this.props.cardRemoved(currentIndex[this.guid]);
+            this._advanceState(true);
+          }, 300);
         } else {
           this._resetPan();
         }
+
       }
     });
   }
@@ -289,7 +287,8 @@ export default class SwipeCards extends Component {
 
   _goToNextCard() {
     currentIndex[this.guid]++;
-
+    // this.state.enter.setValue(0);
+    // this._animateEntrance();
     // Checks to see if last card.
     // If props.loop=true, will start again from the first card.
     if (currentIndex[this.guid] > this.state.cards.length - 1 && this.props.loop) {
@@ -302,16 +301,13 @@ export default class SwipeCards extends Component {
   }
 
   _goToPrevCard() {
-    this.state.pan.setValue({ x: 0, y: 0 });
-    this.state.enter.setValue(0);
-    this._animateEntrance();
-
+    // this.state.pan.setValue({ x: 0, y: 0 });
+    // this.state.enter.setValue(0);
+    // this._animateEntrance();
     currentIndex[this.guid]--;
-
     if (currentIndex[this.guid] < 0) {
       currentIndex[this.guid] = 0;
     }
-
     this.setState({
       card: this.state.cards[currentIndex[this.guid]]
     });
@@ -322,9 +318,9 @@ export default class SwipeCards extends Component {
   }
 
   _animateEntrance() {
-    Animated.spring(
+    Animated.timing(
       this.state.enter,
-      { toValue: 1, friction: 8 }
+      { toValue: 1, duration: 300 }
     ).start();
   }
 
@@ -342,12 +338,25 @@ export default class SwipeCards extends Component {
     }
   }
   _resetPan() {
-    Animated.spring(this.state.pan, {
-      toValue: { x: 0, y: 0 },
-      friction: 4
-    }).start();
+    Animated.timing(
+      this.state.pan,
+      {
+        toValue: { x: 0, y: 0 },
+        duration: 400,
+        easing: Easing.linear
+      }
+    ).start(() => { });
   }
-
+  myStart(type) {
+    Animated.timing(
+      this.state.pan,
+      {
+        toValue: type ? { x: -(widthscreen * 2), y: this.moveY > 0 ? this.moveY + 300 : this.moveY - 300 } : { x: (widthscreen * 2), y: this.moveY > 0 ? this.moveY + 300 : this.moveY - 300 },
+        duration: 500,
+        easing: Easing.linear
+      }
+    ).start(() => { });
+  }
   _resetState() {
     this.state.pan.setValue({ x: 0, y: 0 });
     this.state.enter.setValue(0);
@@ -410,7 +419,7 @@ export default class SwipeCards extends Component {
       let lastOpacity = 0.25 + (0.75 / cards.length) * i;
 
       let scale = 0.85 + (0.15 / cards.length) * (i + 1);
-      let lastScale = 0.65 + (0.15 / cards.length) * i;
+      let lastScale = 0.75 + (0.15 / cards.length) * i;
 
       let style = {
         position: 'absolute',
@@ -424,7 +433,7 @@ export default class SwipeCards extends Component {
 
       //Is this the top card?  If so animate it and hook up the pan handlers.
       if (i + 1 === cards.length) {
-        let { pan } = this.state;
+        let { pan, moveX, moveY } = this.state;
         let [translateX, translateY] = [pan.x, pan.y];
 
         let rotate = pan.x.interpolate({ inputRange: [-200, 0, 200], outputRange: ["-30deg", "0deg", "30deg"] });
@@ -432,10 +441,13 @@ export default class SwipeCards extends Component {
 
         let animatedCardStyles = {
           ...style,
+          // position: "absolute",
+          // top: moveY,
+          // left: moveX,
           transform: [
             { translateX: translateX },
             { translateY: translateY },
-            { rotate: rotate },
+            // { rotate: rotate },
             { scale: this.state.enter.interpolate({ inputRange: [0, 1], outputRange: [lastScale, scale] }) }
           ]
         };
