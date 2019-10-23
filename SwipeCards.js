@@ -168,16 +168,17 @@ export default class SwipeCards extends Component {
     this.cardAnimation = null;
 
     this._panResponder = PanResponder.create({
+
       onMoveShouldSetPanResponderCapture: (e, gestureState) => {
         if (Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3) {
           this.props.onDragStart();
           return true;
         }
-        // return false;
         return true;
       },
-
       onPanResponderGrant: (e, gestureState) => {
+        // console.log(1111, this.state.cards)
+        // console.log(2222, this.state.card)
 
         this.props.lodingHide();
         this.state.pan.setOffset({ x: this.state.pan.x._value, y: this.state.pan.y._value });
@@ -191,18 +192,23 @@ export default class SwipeCards extends Component {
       // ]),
       onPanResponderMove: (e, gestureState) => {
         // cards
-
         const { dx, dy } = gestureState;
-        // if (dy > 20) {
-        //   return
-        // }
+        // console.log("最后一个", dx, dy);
+        if (dx < 0) {
+          if (this.state.card.item_id == this.state.cards[this.state.cards.length - 1].item_id) {
+            // console.log("最后一个")
+            return false;
+          }
+        } else if (dx > 0) {
+          if (this.state.card.item_id == this.state.cards[0].item_id) {
+            // console.log("第一个")
+            return false;
+          }
+        }
+
         this.moveX = dx;
         this.moveY = dy;
         this.state.pan.setValue({ x: dx, y: dy });
-        // this.setState({
-        //   moveX: dx,
-        //   moveY: dy
-        // })
       },
       onPanResponderRelease: (e, { vx, vy, dx, dy }) => {
         this.props.onDragRelease()
@@ -212,29 +218,30 @@ export default class SwipeCards extends Component {
         {
           this.props.onClickHandler(this.state.card)
         }
-
-        // if (vx > 0) {
-        //   velocity = clamp(vx, 3, 9);
-        // } else if (vx < 0) {
-        //   velocity = clamp(vx * -1, 3, 5) * -1;
-        // } else {
-        //   velocity = dx < 0 ? -3 : 3;
-        // } 
-        // console.log(11111, this.state.card)
-        // console.log(2222, this.state.cards)
         this.moveY = dy;
+
         if (dx < -180 || (vx < -0.5 && dx < 0)) {
+          if (this.state.card.item_id == this.state.cards[this.state.cards.length - 1].item_id) {
+            // console.log("最后一个")
+            this.props.handleNope();
+            return false;
+          }
           this.myStart(true);
           setTimeout(() => {
-            this.props.handleNope(this.state.card)
+            // this.props.handleNope(this.state.card)
             this.state.pan.setValue({ x: 0, y: 0 });
             this.props.cardRemoved(currentIndex[this.guid]);
             this._advanceState();
           }, 300);
         } else if (dx > 180 || (vx > 0.3 && dx > 0)) {
+          if (this.state.card.item_id == this.state.cards[0].item_id) {
+            // console.log("第一个")
+            this.props.handleYup();
+            return false;
+          }
           this.myStart();
           setTimeout(() => {
-            this.props.handleYup(this.state.card)
+            // this.props.handleYup(this.state.card)
             this.state.pan.setValue({ x: 0, y: 0 });
             this.props.cardRemoved(currentIndex[this.guid]);
             this._advanceState(true);
@@ -246,7 +253,6 @@ export default class SwipeCards extends Component {
       }
     });
   }
-
   _forceLeftSwipe() {
     this.cardAnimation = Animated.timing(this.state.pan, {
       toValue: { x: -500, y: 0 },
@@ -317,12 +323,7 @@ export default class SwipeCards extends Component {
     // this._animateEntrance();
   }
 
-  _animateEntrance() {
-    Animated.timing(
-      this.state.enter,
-      { toValue: 1, duration: 300 }
-    ).start();
-  }
+
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.cards !== this.props.cards) {
@@ -352,7 +353,7 @@ export default class SwipeCards extends Component {
       this.state.pan,
       {
         toValue: type ? { x: -(widthscreen * 2), y: this.moveY > 0 ? this.moveY + 300 : this.moveY - 300 } : { x: (widthscreen * 2), y: this.moveY > 0 ? this.moveY + 300 : this.moveY - 300 },
-        duration: 500,
+        duration: 400,
         easing: Easing.linear
       }
     ).start(() => { });
@@ -362,10 +363,20 @@ export default class SwipeCards extends Component {
     this.state.enter.setValue(0);
     this._animateEntrance();
   }
-
+  _animateEntrance() {
+    Animated.timing(
+      this.state.enter,
+      { toValue: 1, duration: 300, }
+    ).start();
+  }
   _advanceState(isRight) {
     this.state.pan.setValue({ x: 0, y: 0 });
-    this.state.enter.setValue(0);
+    // this.state.enter.setValue(0);
+    Animated.timing(
+      this.state.enter,
+      { toValue: 0, duration: 1000 }
+    ).start(() => {
+    });
     this._animateEntrance();
     if (isRight) {
       this._goToPrevCard();
@@ -404,7 +415,7 @@ export default class SwipeCards extends Component {
     return cards.map((card, i) => {
 
       let offsetX = 20;
-      let lastOffsetX = offsetX + this.props.stackOffsetX;
+      let lastOffsetX = (offsetX + this.props.stackOffsetX);
       let offsetY = 0;
       offsetY = this.props.stackOffsetY * cards.length - i * this.props.stackOffsetY;
       let lastOffsetY = offsetY + this.props.stackOffsetY;
@@ -414,12 +425,14 @@ export default class SwipeCards extends Component {
       } else {
         offsetY = this.props.stackOffsetY * cards.length - i * this.props.stackOffsetY;
       }
+      // console.log(444,offsetY)
+      // console.log(555,lastOffsetY)
       // let opacity = 0.25 + (0.75 / cards.length) * (i + 1);
       let opacity = 1;
       let lastOpacity = 0.25 + (0.75 / cards.length) * i;
 
       let scale = 0.85 + (0.15 / cards.length) * (i + 1);
-      let lastScale = 0.75 + (0.15 / cards.length) * i;
+      let lastScale = 0.85 + (0.15 / cards.length) * i;
 
       let style = {
         position: 'absolute',
@@ -441,14 +454,13 @@ export default class SwipeCards extends Component {
 
         let animatedCardStyles = {
           ...style,
-          // position: "absolute",
           // top: moveY,
           // left: moveX,
           transform: [
             { translateX: translateX },
             { translateY: translateY },
             // { rotate: rotate },
-            { scale: this.state.enter.interpolate({ inputRange: [0, 1], outputRange: [lastScale, scale] }) }
+            // { scale: this.state.enter.interpolate({ inputRange: [0, 1], outputRange: [lastScale, scale] }) }
           ]
         };
 
