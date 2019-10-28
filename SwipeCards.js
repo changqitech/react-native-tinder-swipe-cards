@@ -194,17 +194,17 @@ export default class SwipeCards extends Component {
         // cards
         const { dx, dy } = gestureState;
         // console.log("最后一个", dx, dy);
-        if (dx < 0) {
-          if (this.state.card.item_id == this.state.cards[this.state.cards.length - 1].item_id) {
-            // console.log("最后一个")
-            return false;
-          }
-        } else if (dx > 0) {
-          if (this.state.card.item_id == this.state.cards[0].item_id) {
-            // console.log("第一个")
-            return false;
-          }
-        }
+        // if (dx < 0) {
+        //   if (this.state.card.item_id == this.state.cards[this.state.cards.length - 1].item_id) {
+        //     // console.log("最后一个")
+        //     return false;
+        //   }
+        // } else if (dx > 0) {
+        //   if (this.state.card.item_id == this.state.cards[0].item_id) {
+        //     // console.log("第一个")
+        //     return false;
+        //   }
+        // }
 
         this.moveX = dx;
         this.moveY = dy;
@@ -221,27 +221,26 @@ export default class SwipeCards extends Component {
         this.moveY = dy;
 
         if (dx < -180 || (vx < -0.5 && dx < 0)) {
-          if (this.state.card.item_id == this.state.cards[this.state.cards.length - 1].item_id) {
-            // console.log("最后一个")
-            this.props.handleNope();
-            return false;
-          }
+          // if (this.state.card.item_id == this.state.cards[this.state.cards.length - 1].item_id) {
+          //   // console.log("最后一个")
+          //   this.props.handleNope();
+          //   return false;
+          // }
           this.myStart(true);
           setTimeout(() => {
-            // this.props.handleNope(this.state.card)
+            this.props.handleNope(this.state.card)
             this.state.pan.setValue({ x: 0, y: 0 });
             this.props.cardRemoved(currentIndex[this.guid]);
             this._advanceState();
           }, 300);
         } else if (dx > 180 || (vx > 0.3 && dx > 0)) {
-          if (this.state.card.item_id == this.state.cards[0].item_id) {
-            // console.log("第一个")
-            this.props.handleYup();
-            return false;
-          }
+          // if (this.state.card.item_id == this.state.cards[0].item_id) {
+          //   this.props.handleYup();
+          //   return false;
+          // }
           this.myStart();
           setTimeout(() => {
-            // this.props.handleYup(this.state.card)
+            this.props.handleYup(this.state.card)
             this.state.pan.setValue({ x: 0, y: 0 });
             this.props.cardRemoved(currentIndex[this.guid]);
             this._advanceState(true);
