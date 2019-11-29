@@ -169,16 +169,15 @@ export default class SwipeCards extends Component {
 
     this._panResponder = PanResponder.create({
 
-      onMoveShouldSetPanResponderCapture: (e, gestureState) => {
-        if (Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3) {
-          this.props.onDragStart();
-          return true;
-        }
-        return true;
+      onStartShouldSetPanResponder: (evt, gestureState) => true,
+      onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
+      onMoveShouldSetPanResponder: (evt, gestureState) => true,
+      onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
+      onPanResponderTerminationRequest: (evt, gestureState) => true,
+      onShouldBlockNativeResponder: (evt, gestureState) => {
+        return false;
       },
       onPanResponderGrant: (e, gestureState) => {
-        // console.log(1111, this.state.cards)
-        // console.log(2222, this.state.card)
 
         this.props.lodingHide();
         this.state.pan.setOffset({ x: this.state.pan.x._value, y: this.state.pan.y._value });
@@ -186,26 +185,8 @@ export default class SwipeCards extends Component {
       },
 
       onPanResponderTerminationRequest: (evt, gestureState) => this.props.allowGestureTermination,
-
-      // onPanResponderMove: Animated.event([
-      //   null, { dx: this.state.pan.x, dy: this.props.dragY ? this.state.pan.y : 0 },
-      // ]),
       onPanResponderMove: (e, gestureState) => {
-        // cards
         const { dx, dy } = gestureState;
-        // console.log("最后一个", dx, dy);
-        // if (dx < 0) {
-        //   if (this.state.card.item_id == this.state.cards[this.state.cards.length - 1].item_id) {
-        //     // console.log("最后一个")
-        //     return false;
-        //   }
-        // } else if (dx > 0) {
-        //   if (this.state.card.item_id == this.state.cards[0].item_id) {
-        //     // console.log("第一个")
-        //     return false;
-        //   }
-        // }
-
         this.moveX = dx;
         this.moveY = dy;
         this.state.pan.setValue({ x: dx, y: dy });
@@ -214,18 +195,14 @@ export default class SwipeCards extends Component {
         this.props.onDragRelease()
         this.state.pan.flattenOffset();
         let velocity = 1;
-        if (Math.abs(dx) <= 5 && Math.abs(dy) <= 5)   //meaning the gesture did not cover any distance
-        {
+        console.log(Math.abs(dx), Math.abs(dy))
+        if (Math.abs(dx) <= 5 && Math.abs(dy) <= 5) {
           this.props.onClickHandler(this.state.card)
+          return
         }
         this.moveY = dy;
 
         if (dx < -180 || (vx < -0.5 && dx < 0)) {
-          // if (this.state.card.item_id == this.state.cards[this.state.cards.length - 1].item_id) {
-          //   // console.log("最后一个")
-          //   this.props.handleNope();
-          //   return false;
-          // }
           this.myStart(true);
           setTimeout(() => {
             this.props.handleNope(this.state.card)
@@ -234,10 +211,6 @@ export default class SwipeCards extends Component {
             this._advanceState();
           }, 300);
         } else if (dx > 180 || (vx > 0.3 && dx > 0)) {
-          // if (this.state.card.item_id == this.state.cards[0].item_id) {
-          //   this.props.handleYup();
-          //   return false;
-          // }
           this.myStart();
           setTimeout(() => {
             this.props.handleYup(this.state.card)
@@ -258,19 +231,16 @@ export default class SwipeCards extends Component {
     }).start(status => {
       if (status.finished) this._advanceState(false);
       else this._resetState();
-
       this.cardAnimation = null;
     });
     this.props.cardRemoved(currentIndex[this.guid]);
   }
-
   _forceUpSwipe() {
     this.cardAnimation = Animated.timing(this.state.pan, {
       toValue: { x: 0, y: 500 },
     }).start(status => {
       if (status.finished) this._advanceState(false);
       else this._resetState();
-
       this.cardAnimation = null;
     }
     );
@@ -292,10 +262,6 @@ export default class SwipeCards extends Component {
 
   _goToNextCard() {
     currentIndex[this.guid]++;
-    // this.state.enter.setValue(0);
-    // this._animateEntrance();
-    // Checks to see if last card.
-    // If props.loop=true, will start again from the first card.
     if (currentIndex[this.guid] > this.state.cards.length - 1 && this.props.loop) {
       this.props.onLoop();
       currentIndex[this.guid] = 0;
@@ -306,9 +272,6 @@ export default class SwipeCards extends Component {
   }
 
   _goToPrevCard() {
-    // this.state.pan.setValue({ x: 0, y: 0 });
-    // this.state.enter.setValue(0);
-    // this._animateEntrance();
     currentIndex[this.guid]--;
     if (currentIndex[this.guid] < 0) {
       currentIndex[this.guid] = 0;
@@ -319,7 +282,6 @@ export default class SwipeCards extends Component {
   }
 
   componentDidMount() {
-    // this._animateEntrance();
   }
 
 
@@ -330,7 +292,6 @@ export default class SwipeCards extends Component {
         this.cardAnimation.stop();
         this.cardAnimation = null;
       }
-      // currentIndex[this.guid] = currentIndex[this.guid] + 1;
       this.setState({
         cards: [].concat(nextProps.cards),
         card: nextProps.cards[currentIndex[this.guid]]
