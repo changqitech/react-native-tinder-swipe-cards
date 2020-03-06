@@ -107,7 +107,8 @@ export default class SwipeCards extends Component {
     renderCard: PropTypes.func,
     cardRemoved: PropTypes.func,
     dragY: PropTypes.bool,
-    smoothTransition: PropTypes.bool
+    smoothTransition: PropTypes.bool,
+    isShell: PropTypes.bool
   };
   static defaultProps = {
     cards: [],
@@ -141,7 +142,8 @@ export default class SwipeCards extends Component {
     },
     style: styles.container,
     dragY: true,
-    smoothTransition: false
+    smoothTransition: false,
+    isShell: false,
   };
 
   constructor(props) {
@@ -168,7 +170,8 @@ export default class SwipeCards extends Component {
     this.cardAnimation = null;
 
     this._panResponder = PanResponder.create({
-
+      onStartShouldSetResponderCapture: (evt) => true,
+      onMoveShouldSetResponderCapture: (evt) => true,
       onStartShouldSetPanResponder: (evt, gestureState) => true,
       onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
       onMoveShouldSetPanResponder: (evt, gestureState) => true,
@@ -195,7 +198,6 @@ export default class SwipeCards extends Component {
         this.props.onDragRelease()
         this.state.pan.flattenOffset();
         let velocity = 1;
-        console.log(Math.abs(dx), Math.abs(dy))
         if (Math.abs(dx) <= 5 && Math.abs(dy) <= 5) {
           this.props.onClickHandler(this.state.card)
           return
@@ -374,13 +376,25 @@ export default class SwipeCards extends Component {
 
     return cards.map((card, i) => {
       let offsetX = 20;
+      if (this.props.isShell) {
+        offsetX = this.props.stackOffsetX * cards.length - i * this.props.stackOffsetX;
+      }
       let lastOffsetX = (offsetX + this.props.stackOffsetX);
       let offsetY = 0;
-      let lastOffsetY = offsetY + this.props.stackOffsetY;
-      if (this.state.cards.length - 1 - currentIndex[this.guid] <= 1) {
-        offsetY = 30 * cards.length - i * 30;
-      } else {
+      if (this.props.isShell) {
         offsetY = this.props.stackOffsetY * cards.length - i * this.props.stackOffsetY;
+      } else {
+        if (this.state.cards.length - 1 - currentIndex[this.guid] <= 1) {
+          offsetY = 30 * cards.length - i * 30;
+        } else {
+          offsetY = this.props.stackOffsetY * cards.length - i * this.props.stackOffsetY;
+        }
+      }
+      let lastOffsetY = 0;
+      if (this.props.isShell) {
+        lastOffsetY = offsetY + this.props.stackOffsetY;
+      } else {
+        lastOffsetY = this.props.stackOffsetY;
       }
       // let opacity = 0.25 + (0.75 / cards.length) * (i + 1);
       let opacity = 1;
